@@ -11,36 +11,25 @@ jobs:
       - name: Setup Java JDK
         uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
+          distribution: 'temurin'
           java-version: '17'
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Prepare Capacitor Web Assets
+      - name: Build Android Native APK
         run: |
-          mkdir -p www
-          cp index.html www/
-          [ -f manifest.json ] && cp manifest.json www/ || true
-          echo '{"name": "omniai", "version": "1.0.0"}' > package.json
-          npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
-          npx cap init "OmniAI" "com.omni.ai" --web-dir "www"
-          npx cap add android
-          npx cap sync android
-
-      - name: Build Debug APK
-        run: |
-          cd android
-          chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          npm install -g cordova
+          cordova telemetry off
+          cordova create app com.omni.ai OmniAI
+          cd app
+          rm -rf www/*
+          cp ~/../..$GITHUB_WORKSPACE/index.html www/index.html
+          cordova platform add android --no-telemetry
+          cordova build android --debug --no-telemetry
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
           name: OmniAI-Debug-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: app/platforms/android/app/build/outputs/apk/debug/app-debug.apk
