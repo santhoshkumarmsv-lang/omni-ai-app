@@ -14,27 +14,30 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Setup Web Directory & Capacitor
+      - name: Prepare Capacitor Web Assets
         run: |
           mkdir -p www
           cp index.html www/
           [ -f manifest.json ] && cp manifest.json www/ || true
-          npm init -y
-          npm install @capacitor/core @capacitor/cli @capacitor/android
+          echo '{"name": "omniai", "version": "1.0.0"}' > package.json
+          npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
           npx cap init "OmniAI" "com.omni.ai" --web-dir "www"
           npx cap add android
           npx cap sync android
 
-      - name: Build Android APK with Gradle
+      - name: Build Debug APK
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --stacktrace
+          ./gradlew assembleDebug --no-daemon
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
