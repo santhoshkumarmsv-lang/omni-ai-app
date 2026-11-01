@@ -19,16 +19,22 @@ jobs:
         with:
           node-version: 20
 
-      - name: Build Android Project with Capacitor
+      - name: Setup Web Directory & Capacitor
         run: |
+          mkdir -p www
+          cp index.html www/
+          [ -f manifest.json ] && cp manifest.json www/ || true
           npm init -y
           npm install @capacitor/core @capacitor/cli @capacitor/android
-          npx cap init OmniAI com.omni.ai --web-dir .
+          npx cap init "OmniAI" "com.omni.ai" --web-dir "www"
           npx cap add android
           npx cap sync android
+
+      - name: Build Android APK with Gradle
+        run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug --stacktrace
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
