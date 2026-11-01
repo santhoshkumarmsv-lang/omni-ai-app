@@ -11,20 +11,26 @@ jobs:
       - name: Setup Java JDK
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
+          distribution: 'zulu'
           java-version: '17'
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Build Android Native APK
+      - name: Prepare Android SDK Paths
+        run: |
+          echo "ANDROID_HOME=${ANDROID_SDK_ROOT}" >> $GITHUB_ENV
+          echo "PATH=${PATH}:${ANDROID_SDK_ROOT}/tools:${ANDROID_SDK_ROOT}/platform-tools" >> $GITHUB_ENV
+
+      - name: Build Android App with Cordova
         run: |
           npm install -g cordova
           cordova telemetry off
           cordova create app com.omni.ai OmniAI
           cd app
           rm -rf www/*
-          cp ~/../..$GITHUB_WORKSPACE/index.html www/index.html
+          cp ../index.html www/index.html
+          [ -f ../manifest.json ] && cp ../manifest.json www/ || true
           cordova platform add android --no-telemetry
           cordova build android --debug --no-telemetry
 
