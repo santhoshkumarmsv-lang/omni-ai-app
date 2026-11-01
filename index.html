@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="manifest.json">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Omni-5 AI Coding Engine</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: #070b14; color: #f1f5f9; padding: 16px; padding-bottom: 100px; }
+    header { text-align: center; margin-bottom: 14px; }
+    header h1 { font-size: 20px; color: #38bdf8; }
+    header p { font-size: 11px; color: #94a3b8; }
+    .settings-panel { background: #131b2e; border: 1px solid #1e293b; padding: 12px; border-radius: 12px; margin-bottom: 14px; }
+    .settings-panel details summary { font-size: 13px; font-weight: bold; color: #f59e0b; cursor: pointer; }
+    .settings-panel input { width: 100%; background: #0b0f19; border: 1px solid #334155; color: #fff; padding: 8px 10px; border-radius: 6px; margin: 6px 0; font-size: 12px; }
+    .grid-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 6px; margin-bottom: 14px; }
+    .ai-badge { background: #111827; border: 1px solid #374151; padding: 8px 4px; border-radius: 8px; text-align: center; font-size: 11px; color: #9ca3af; }
+    .ai-badge.active { border-color: #38bdf8; color: #38bdf8; background: #082f49; }
+    .ai-badge.done { border-color: #10b981; color: #10b981; background: #064e3b; }
+    .ai-badge.error { border-color: #ef4444; color: #ef4444; }
+    .consensus-badge { background: #1e1b4b; border: 1px solid #6366f1; padding: 10px; border-radius: 8px; text-align: center; font-size: 13px; color: #c7d2fe; margin-bottom: 14px; font-weight: bold; }
+    .consensus-badge.working { animation: glow 1.2s infinite alternate; }
+    .output-card { background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 14px; }
+    .output-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .output-header h3 { font-size: 14px; color: #38bdf8; }
+    pre { background: #020617; padding: 12px; border-radius: 8px; overflow-x: auto; font-family: monospace; font-size: 12px; color: #a5f3fc; white-space: pre-wrap; line-height: 1.4; border: 1px solid #1e293b; }
+    .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #0f172a; padding: 10px 14px; display: flex; align-items: center; gap: 8px; border-top: 1px solid #1e293b; }
+    .btn-icon { background: #1e293b; border: 1px solid #334155; color: #fff; width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; flex-shrink: 0; }
+    .btn-icon.recording { background: #dc2626; border-color: #ef4444; animation: pulse 1s infinite; }
+    .input-box { flex: 1; background: #020617; border: 1px solid #334155; color: #fff; padding: 10px 14px; border-radius: 20px; font-size: 14px; outline: none; }
+    .btn-send { background: #2563eb; border: none; color: white; width: 42px; height: 42px; border-radius: 50%; font-size: 16px; cursor: pointer; flex-shrink: 0; font-weight: bold; }
+    #mediaBadge { font-size: 11px; color: #38bdf8; margin-bottom: 6px; display: none; }
+    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+    @keyframes glow { from { border-color: #6366f1; } to { border-color: #ec4899; box-shadow: 0 0 10px #ec4899; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Omni-5 AI Coding Swarm</h1>
+    <p>Gemini + Llama + Mistral + DeepSeek + Qwen</p>
+  </header>
+  <div class="settings-panel">
+    <details>
+      <summary>⚙️ API Keys அமைப்பு (கிளிக் செய்யவும்)</summary>
+      <input type="password" id="geminiKey" placeholder="Gemini API Key...">
+      <input type="password" id="groqKey" placeholder="Groq API Key...">
+      <input type="password" id="openRouterKey" placeholder="OpenRouter API Key...">
+    </details>
+  </div>
+  <div class="grid-container">
+    <div class="ai-badge" id="geminiBadge">Gemini 1.5</div>
+    <div class="ai-badge" id="groqBadge">Llama 3.3</div>
+    <div class="ai-badge" id="deepseekBadge">DeepSeek</div>
+    <div class="ai-badge" id="mistralBadge">Mistral</div>
+    <div class="ai-badge" id="qwenBadge">Qwen 2.5</div>
+  </div>
+  <div class="consensus-badge" id="masterStatus">மாஸ்டர் AI: காத்திருக்கிறது</div>
+  <div id="mediaBadge">📎 மீடியா இணைக்கப்பட்டுள்ளது</div>
+  <div class="output-card">
+    <div class="output-header">
+      <h3>5 AI மாடல்களும் இணைந்து உருவாக்கிய இறுதி கோடு</h3>
+      <button onclick="copyOutput()" style="background:#1e293b; border:1px solid #475569; color:#f1f5f9; padding:4px 10px; border-radius:6px; font-size:11px; cursor:pointer;">Copy</button>
+    </div>
+    <pre id="codeView">// நீங்கள் கேட்கும் கேள்விக்கான முழு கோடு இங்கே வரும்...</pre>
+  </div>
+  <div class="bottom-bar">
+    <input type="file" id="mediaUpload" accept="image/*,video/*" style="display: none;" onchange="processMedia(this)">
+    <button class="btn-icon" onclick="document.getElementById('mediaUpload').click()">📎</button>
+    <button class="btn-icon" id="micBtn" onclick="toggleMic()">🎤</button>
+    <input type="text" class="input-box" id="userInput" placeholder="கேள்வியை பேசவும் அல்லது டைப் செய்யவும்...">
+    <button class="btn-send" onclick="launchSwarm()">➤</button>
+  </div>
+  <script>
+    let base64Media = null;
+    let mediaType = null;
+    let speechEngine;
+    let isSpeaking = false;
+
+    window.onload = () => {
+      ['geminiKey', 'groqKey', 'openRouterKey'].forEach(id => {
+        if (localStorage.getItem(id)) document.getElementById(id).value = localStorage.getItem(id);
+      });
+      initVoice();
+    };
+
+    function processMedia(elem) {
+      const file = elem.files[0];
+      if (!file) return;
+      mediaType = file.type;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        base64Media = e.target.result.split(',')[1];
+        const badge = document.getElementById('mediaBadge');
+        badge.style.display = 'block';
+        badge.innerText = `📎 இணைக்கப்பட்டது: ${file.name}`;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function initVoice() {
+      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+        speechEngine = new Speech();
+        speechEngine.lang = 'ta-IN';
+        speechEngine.continuous = false;
+        speechEngine.onresult = (e) => {
+          document.getElementById('userInput').value = e.results[0][0].transcript;
+        };
+        speechEngine.onend = () => {
+          isSpeaking = false;
+          document.getElementById('micBtn').classList.remove('recording');
+        };
+      }
+    }
+
+    function toggleMic() {
+      if (!speechEngine) return alert('Speech API உங்கள் பிரவுசரில் சப்போர்ட் செய்யவில்லை.');
+      if (isSpeaking) {
+        speechEngine.stop();
+      } else {
+        speechEngine.start();
+        document.getElementById('micBtn').classList.add('recording');
+        isSpeaking = true;
+      }
+    }
+
+    async function launchSwarm() {
+      const prompt = document.getElementById('userInput').value.trim();
+      const gemKey = document.getElementById('geminiKey').value.trim();
+      const groqKey = document.getElementById('groqKey').value.trim();
+      const openRouterKey = document.getElementById('openRouterKey').value.trim();
+
+      if (!prompt) return alert('கேள்வியை உள்ளிடவும்!');
+      if (!gemKey || !groqKey || !openRouterKey) return alert('மூன்று API Key-களையும் உள்ளிடவும்!');
+
+      localStorage.setItem('geminiKey', gemKey);
+      localStorage.setItem('groqKey', groqKey);
+      localStorage.setItem('openRouterKey', openRouterKey);
+
+      ['geminiBadge', 'groqBadge', 'deepseekBadge', 'mistralBadge', 'qwenBadge'].forEach(id => {
+        setBadge(id, 'active', 'இயங்குகிறது...');
+      });
+
+      const master = document.getElementById('masterStatus');
+      master.className = 'consensus-badge working';
+      master.innerText = '5 AI மாடல்களும் சிந்திக்கின்றன...';
+      document.getElementById('codeView').innerText = "// தீர்வுகள் பெறப்படுகின்றன...";
+
+      const promiseGemini = callGemini(prompt, gemKey, base64Media, mediaType)
+        .then(r => { setBadge('geminiBadge', 'done', 'Gemini OK'); return r; })
+        .catch(e => { setBadge('geminiBadge', 'error', 'Error'); return null; });
+
+      const promiseGroq = callGroq(prompt, groqKey)
+        .then(r => { setBadge('groqBadge', 'done', 'Llama OK'); return r; })
+        .catch(e => { setBadge('groqBadge', 'error', 'Error'); return null; });
+
+      const promiseDeepseek = callOpenRouter(prompt, openRouterKey, "deepseek/deepseek-r1:free")
+        .then(r => { setBadge('deepseekBadge', 'done', 'DeepSeek OK'); return r; })
+        .catch(e => { setBadge('deepseekBadge', 'error', 'Error'); return null; });
+
+      const promiseMistral = callOpenRouter(prompt, openRouterKey, "mistralai/mistral-7b-instruct:free")
+        .then(r => { setBadge('mistralBadge', 'done', 'Mistral OK'); return r; })
+        .catch(e => { setBadge('mistralBadge', 'error', 'Error'); return null; });
+
+      const promiseQwen = callOpenRouter(prompt, openRouterKey, "qwen/qwen-2.5-72b-instruct:free")
+        .then(r => { setBadge('qwenBadge', 'done', 'Qwen OK'); return r; })
+        .catch(e => { setBadge('qwenBadge', 'error', 'Error'); return null; });
+
+      const results = await Promise.all([promiseGemini, promiseGroq, promiseDeepseek, promiseMistral, promiseQwen]);
+      const validResults = results.filter(r => r !== null);
+
+      if (validResults.length === 0) {
+        master.className = 'consensus-badge';
+        master.innerText = 'அனைத்து APIகளிலும் பிழை! API Keys சரிபார்க்கவும்.';
+        return;
+      }
+
+      master.innerText = `${validResults.length} மாடல்கள் பதிலளித்தன. மாஸ்டர் AI சிறந்த கோடை உருவாக்குகிறது...`;
+
+      let consensusPrompt = `You are a Principal Software Architect.\nUser Request: "${prompt}"\n\nBelow are candidate solutions:\n`;
+      validResults.forEach((res, i) => { consensusPrompt += `\n--- SOLUTION ${i+1} ---\n${res}\n`; });
+      consensusPrompt += `\nTASK: Merge the cleanest architecture and syntax into ONE final bug-free code. Output ONLY the code.`;
+
+      try {
+        const finalMasterCode = await callGroq(consensusPrompt, groqKey);
+        master.className = 'consensus-badge';
+        master.innerText = 'வெற்றி! ஒருங்கிணைக்கப்பட்ட முழு கோடு தயார்.';
+        document.getElementById('codeView').innerText = finalMasterCode;
+      } catch (err) {
+        master.className = 'consensus-badge';
+        master.innerText = 'ஒருங்கிணைப்பதில் பிழை: ' + err.message;
+      }
+    }
+
+    function setBadge(id, state, text) {
+      const b = document.getElementById(id);
+      b.className = `ai-badge ${state}`;
+      b.innerText = text;
+    }
+
+    async function callGemini(prompt, key, media, mime) {
+      const parts = [{ text: prompt }];
+      if (media && mime) parts.push({ inline_data: { mime_type: mime, data: media } });
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts }] })
+      });
+      const data = await res.json();
+      return data.candidates[0].content.parts[0].text;
+    }
+
+    async function callGroq(prompt, key) {
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: [{ role: 'user', content: prompt }] })
+      });
+      const data = await res.json();
+      return data.choices[0].message.content;
+    }
+
+    async function callOpenRouter(prompt, key, modelName) {
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: modelName, messages: [{ role: 'user', content: prompt }] })
+      });
+      const data = await res.json();
+      return data.choices[0].message.content;
+    }
+
+    function copyOutput() {
+      navigator.clipboard.writeText(document.getElementById('codeView').innerText);
+      alert('காப்பி செய்யப்பட்டது!');
+    }
+  </script>
+</body>
+</html>
